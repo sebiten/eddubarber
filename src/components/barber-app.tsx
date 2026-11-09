@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Brand } from "./brand";
-import { previewData, previewStorageKey } from "@/lib/demo";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -29,7 +28,7 @@ import {
   Booking,
   Data,
   dateLabel,
-  demoData,
+  defaults,
   money,
   Service,
   slots,
@@ -46,17 +45,11 @@ const statusLabels = {
   no_show: "No asistió",
 };
 
-export function BarberApp({
-  admin,
-  demo = false,
-}: {
-  admin: boolean;
-  demo?: boolean;
-}) {
-  const configured = supabaseConfigured && !demo;
-  const storageKey = demo ? previewStorageKey : "eddu-barber-demo-v1";
-  const basePath = demo ? "/demo" : "";
-  const [data, setData] = useState<Data>(demoData);
+export function BarberApp({ admin }: { admin: boolean }) {
+  const configured = supabaseConfigured;
+  const basePath = "";
+  const [data, setData] = useState<Data>({ services: [], settings: defaults, blocks: [], bookings: [] });
+  const [available, setAvailable] = useState(false);
   const [ready, setReady] = useState(false);
   const [session, setSession] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("agenda");
@@ -71,22 +64,6 @@ export function BarberApp({
 
   const refresh = useCallback(
     async (token?: string | null) => {
-      if (!configured) {
-        try {
-          const saved = localStorage.getItem(storageKey);
-          const initial = saved
-            ? JSON.parse(saved)
-            : demo
-              ? previewData()
-              : demoData();
-          if (!saved) localStorage.setItem(storageKey, JSON.stringify(initial));
-          setData(initial);
-        } catch {
-          setData(demoData());
-        }
-        setReady(true);
-        return;
-      }
       try {
         const response = await fetch(`/api/data${admin ? "?admin=1" : ""}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -98,25 +75,27 @@ export function BarberApp({
               ? "Ingresá con la cuenta del barbero autorizada para este panel."
               : "No se pudo cargar la agenda. Volvé a intentar.",
           );
+          setAvailable(false);
           setReady(true);
           return;
         }
         setData(await response.json());
+        setAvailable(true);
+        setError("");
         setReady(true);
       } catch {
+        setAvailable(false);
         setError("No hay conexión. Intentá nuevamente en unos segundos.");
         setReady(true);
       }
     },
-    [admin, configured, demo, storageKey],
+    [admin],
   );
 
   useEffect(() => {
-    if (!configured) {
+    if (!configured || !admin) {
       void refresh();
-      const handler = () => void refresh();
-      window.addEventListener("storage", handler);
-      return () => window.removeEventListener("storage", handler);
+      return;
     }
     const db = browserDb();
     void db.auth.getSession().then(({ data: { session: s } }) => {
@@ -128,7 +107,7 @@ export function BarberApp({
       void refresh(s?.access_token);
     });
     return () => subscription.subscription.unsubscribe();
-  }, [refresh, configured]);
+  }, [refresh, configured, admin]);
   useEffect(() => {
     if (!configured) return;
     const id = setInterval(() => void refresh(session), 20000);
@@ -155,80 +134,7 @@ export function BarberApp({
         await refresh(session);
         return result.booking;
       }
-      const saved = localStorage.getItem(storageKey);
-      const next: Data = saved
-        ? JSON.parse(saved)
-        : demo
-          ? previewData()
-          : demoData();
-      let created: Booking | undefined;
-      if (payload.action === "book") {
-        const service = next.services.find(
-          (s) => s.id === payload.service_id && s.active,
-        );
-        if (
-          String(payload.date) > addDays(today(), 60) ||
-          !service ||
-          !slots(next, String(payload.date), service.duration).includes(
-            String(payload.time),
-          )
-        )
-          throw new Error("Ese horario ya no está disponible. Elegí otro.");
-        created = {
-          id: crypto.randomUUID(),
-          token: crypto.randomUUID(),
-          date: String(payload.date),
-          time: String(payload.time),
-          duration: service.duration,
-          service_id: service.id,
-          service_name: service.name,
-          price: service.price,
-          name: String(payload.name),
-          phone: String(payload.phone),
-          status: "confirmed",
-        };
-        next.bookings.push(created);
-      } else if (payload.action === "status") {
-        const booking = next.bookings.find((b) => b.id === payload.id);
-        if (
-          booking?.status === "cancelled" &&
-          payload.status !== "cancelled" &&
-          !slots(next, booking.date, booking.duration).includes(booking.time)
-        )
-          throw new Error(
-            "No se puede restaurar: el horario está ocupado, bloqueado o ya pasó.",
-          );
-        next.bookings = next.bookings.map((b) =>
-          b.id === payload.id
-            ? { ...b, status: payload.status as Booking["status"] }
-            : b,
-        );
-      } else if (payload.action === "block") {
-        next.blocks = next.blocks.filter((b) => b.date !== payload.date);
-        next.blocks.push({
-          date: String(payload.date),
-          reason: String(payload.reason),
-        });
-        if (payload.cancel)
-          next.bookings = next.bookings.map((b) =>
-            b.date === payload.date && b.status === "confirmed"
-              ? { ...b, status: "cancelled" }
-              : b,
-          );
-      } else if (payload.action === "unblock") {
-        next.blocks = next.blocks.filter((b) => b.date !== payload.date);
-      } else if (payload.action === "service") {
-        const service = payload.service as Service;
-        next.services = [
-          ...next.services.filter((s) => s.id !== service.id),
-          service,
-        ];
-      } else if (payload.action === "settings") {
-        next.settings = payload.settings as Data["settings"];
-      }
-      setData(next);
-      localStorage.setItem(storageKey, JSON.stringify(next));
-      return created;
+      throw new Error("Las reservas no están disponibles. Intentá más tarde.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo guardar.");
       throw e;
@@ -366,33 +272,6 @@ export function BarberApp({
             </button>
           )}
         </header>
-        {!configured && (
-          <div className="demo-banner">
-            <span className="live-dot" /> Modo demo · Los cambios se guardan
-            solo en este navegador.
-            {demo && (
-              <>
-                <Link href={admin ? "/demo" : "/demo/panel"}>
-                  {admin ? "Vista cliente" : "Probar panel"}
-                </Link>
-                <button
-                  onClick={() => {
-                    if (
-                      !window.confirm(
-                        "¿Reiniciar la demo? Se borrarán únicamente los cambios de prueba.",
-                      )
-                    )
-                      return;
-                    localStorage.removeItem(storageKey);
-                    window.location.reload();
-                  }}
-                >
-                  Reiniciar demo
-                </button>
-              </>
-            )}
-          </div>
-        )}
         <main className={admin ? "content" : "public-content"}>
           {error && (
             <div className="alert error" role="alert">
@@ -421,21 +300,30 @@ export function BarberApp({
           )}
           {!ready ? (
             <div className="loading">Cargando la agenda…</div>
+          ) : !available ? (
+            <section className="confirmation panel" role="status">
+              <h2>No pudimos cargar la agenda.</h2>
+              <p>Las reservas no están disponibles en este momento. Intentá nuevamente en unos minutos.</p>
+              <button className="primary" onClick={() => void refresh(session)}>Volver a intentar</button>
+            </section>
           ) : !admin ? (
             <>
               <section className="public-hero">
                 <div className="eyebrow">
-                  <span className="barber-pole" /> ESTILO PROPIO. SIN VUELTAS.
+                  <Scissors size={18} /> EDDU · BARBER STUDIO
                 </div>
                 <h1>
-                  Un buen corte.
+                  Tu estilo.
                   <br />
-                  <span>Un buen día.</span>
+                  <span>Tu barbería.</span>
                 </h1>
                 <p>
-                  Tu próximo turno en {data.settings.name}.<br />
-                  Elegí cómo, cuándo y listo. Nosotros nos encargamos del resto.
+                  Reservá tu turno en {data.settings.name}.<br />
+                  Elegí el servicio, el horario y completá tus datos.
                 </p>
+                <a className="primary hero-booking-link" href="#reservar">
+                  Reservar mi turno <ArrowRight size={20} />
+                </a>
                 <div className="location">
                   <MapPin size={17} />
                   {data.settings.address}
@@ -451,12 +339,19 @@ export function BarberApp({
                   />
                 </div>
               </section>
-              <BookingForm
-                data={data}
-                busy={busy}
-                command={command}
-                basePath={basePath}
-              />
+              <div id="reservar" className="reservation-area" tabIndex={-1}>
+                <div className="reservation-intro">
+                  <span className="eyebrow">RESERVAS ONLINE</span>
+                  <h2>Tu turno, en 3 pasos.</h2>
+                  <p>Sin crear una cuenta. Pagás en la barbería.</p>
+                </div>
+                <BookingForm
+                  data={data}
+                  busy={busy}
+                  command={command}
+                  basePath={basePath}
+                />
+              </div>
               <footer className="public-footer">
                 <Brand href={basePath || "/"} />
                 <span>Buenos cortes. Buenas costumbres.</span>
@@ -743,9 +638,7 @@ export function BarberApp({
                       </div>
                       <div className="panel-footer">
                         <span className="live-dot" />
-                        {configured
-                          ? "La agenda se actualiza cada 20 segundos"
-                          : "Agenda de demostración"}
+                        "La agenda se actualiza cada 20 segundos"
                         <span>Hora de Argentina</span>
                       </div>
                     </section>
@@ -1147,7 +1040,7 @@ function BookingForm({
           <span>01</span>
           <div>
             <h2>Elegí tu servicio</h2>
-            <p>El primer paso para tu próximo look.</p>
+            <p>Tocá el servicio que querés reservar.</p>
           </div>
         </div>
         <div className="service-options">
@@ -1157,6 +1050,7 @@ function BookingForm({
               <button
                 type="button"
                 key={s.id}
+                aria-pressed={serviceId === s.id}
                 onClick={() => {
                   setServiceId(s.id);
                   setTime("");
@@ -1188,8 +1082,8 @@ function BookingForm({
         <div className="step-heading">
           <span>02</span>
           <div>
-            <h2>Encontrá tu momento</h2>
-            <p>Los horarios se muestran en hora de Argentina.</p>
+            <h2>Elegí el día y el horario</h2>
+            <p>Tocá un horario disponible. Hora de Argentina.</p>
           </div>
         </div>
         <label>
@@ -1225,6 +1119,7 @@ function BookingForm({
                 <button
                   type="button"
                   key={t}
+                  aria-pressed={time === t}
                   className={time === t ? "selected" : ""}
                   onClick={() => setTime(t)}
                 >
@@ -1295,6 +1190,11 @@ function BookingForm({
           <span>{service?.name ?? "Elegí un servicio"}</span>
           <strong>{service ? money(service.price) : "—"}</strong>
           <small>Pagás en la barbería</small>
+          <small aria-live="polite">
+            {time && available.includes(time)
+              ? `${dateLabel(date, true)} · ${time} h`
+              : "Elegí un horario para poder confirmar."}
+          </small>
         </div>
         <button
           className="primary"

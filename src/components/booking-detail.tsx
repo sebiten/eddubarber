@@ -4,13 +4,9 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CalendarDays, Check } from "lucide-react";
 import { Brand } from "./brand";
-import { previewStorageKey } from "@/lib/demo";
-import { Booking, Data, dateLabel, money } from "@/lib/domain";
-import { configured as supabaseConfigured } from "@/lib/supabase";
-export function BookingDetail({ demo = false }: { demo?: boolean }) {
-  const configured = supabaseConfigured && !demo;
-  const storageKey = demo ? previewStorageKey : "eddu-barber-demo-v1";
-  const home = demo ? "/demo" : "/";
+import { Booking, dateLabel, money } from "@/lib/domain";
+export function BookingDetail() {
+  const home = "/";
   const params = useSearchParams(),
     id = params.get("id"),
     token = params.get("token");
@@ -21,19 +17,12 @@ export function BookingDetail({ demo = false }: { demo?: boolean }) {
   useEffect(() => {
     async function load() {
       try {
-        if (configured) {
           const r = await fetch(
             `/api/booking?id=${encodeURIComponent(id ?? "")}&token=${encodeURIComponent(token ?? "")}`,
           );
           const b = await r.json();
           if (!r.ok) throw new Error(b.error);
           setBooking(b);
-        } else {
-          const d: Data = JSON.parse(localStorage.getItem(storageKey) || "{}");
-          const b = d.bookings?.find((b) => b.id === id && b.token === token);
-          if (!b) throw new Error("No encontramos el turno en este navegador.");
-          setBooking(b);
-        }
       } catch (e) {
         setError(
           e instanceof Error ? e.message : "No se pudo cargar el turno.",
@@ -41,12 +30,11 @@ export function BookingDetail({ demo = false }: { demo?: boolean }) {
       }
     }
     void load();
-  }, [id, token, configured, storageKey]);
+  }, [id, token]);
   async function cancel() {
     setBusy(true);
     setError("");
     try {
-      if (configured) {
         const r = await fetch("/api/manage", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -54,20 +42,6 @@ export function BookingDetail({ demo = false }: { demo?: boolean }) {
         });
         const result = await r.json();
         if (!r.ok) throw new Error(result.error);
-      } else {
-        const d: Data = JSON.parse(localStorage.getItem(storageKey) || "{}");
-        const b = d.bookings?.find((b) => b.id === id && b.token === token);
-        if (
-          !b ||
-          b.status !== "confirmed" ||
-          new Date(`${b.date}T${b.time}:00-03:00`) <= new Date()
-        )
-          throw new Error("El turno ya no se puede cancelar.");
-        d.bookings = d.bookings.map((b) =>
-          b.id === id ? { ...b, status: "cancelled" } : b,
-        );
-        localStorage.setItem(storageKey, JSON.stringify(d));
-      }
       setBooking((b) => (b ? { ...b, status: "cancelled" } : null));
       setConfirm(false);
     } catch (e) {
@@ -105,11 +79,6 @@ export function BookingDetail({ demo = false }: { demo?: boolean }) {
   return (
     <main className="turno-page">
       <Brand href={home} />
-      {!configured && (
-        <div className="demo-banner">
-          Turno de demostración · Solo en este navegador
-        </div>
-      )}
       {error && (
         <div className="alert error" role="alert">
           {error}
