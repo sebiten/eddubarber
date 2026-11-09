@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { Brand } from "./brand";
+import { previewData, previewStorageKey } from "@/lib/demo";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -32,9 +35,8 @@ import {
   slots,
   today,
 } from "@/lib/domain";
-import { browserDb, configured } from "@/lib/supabase";
+import { browserDb, configured as supabaseConfigured } from "@/lib/supabase";
 
-const storageKey = "eddu-barber-demo-v1";
 type Tab = "agenda" | "blocks" | "services" | "settings";
 type Command = { action: string; [key: string]: unknown };
 const statusLabels = {
@@ -44,7 +46,16 @@ const statusLabels = {
   no_show: "No asistió",
 };
 
-export function BarberApp({ admin }: { admin: boolean }) {
+export function BarberApp({
+  admin,
+  demo = false,
+}: {
+  admin: boolean;
+  demo?: boolean;
+}) {
+  const configured = supabaseConfigured && !demo;
+  const storageKey = demo ? previewStorageKey : "eddu-barber-demo-v1";
+  const basePath = demo ? "/demo" : "";
   const [data, setData] = useState<Data>(demoData);
   const [ready, setReady] = useState(false);
   const [session, setSession] = useState<string | null>(null);
@@ -63,7 +74,13 @@ export function BarberApp({ admin }: { admin: boolean }) {
       if (!configured) {
         try {
           const saved = localStorage.getItem(storageKey);
-          setData(saved ? JSON.parse(saved) : demoData());
+          const initial = saved
+            ? JSON.parse(saved)
+            : demo
+              ? previewData()
+              : demoData();
+          if (!saved) localStorage.setItem(storageKey, JSON.stringify(initial));
+          setData(initial);
         } catch {
           setData(demoData());
         }
@@ -91,7 +108,7 @@ export function BarberApp({ admin }: { admin: boolean }) {
         setReady(true);
       }
     },
-    [admin],
+    [admin, configured, demo, storageKey],
   );
 
   useEffect(() => {
@@ -111,12 +128,12 @@ export function BarberApp({ admin }: { admin: boolean }) {
       void refresh(s?.access_token);
     });
     return () => subscription.subscription.unsubscribe();
-  }, [refresh]);
+  }, [refresh, configured]);
   useEffect(() => {
     if (!configured) return;
     const id = setInterval(() => void refresh(session), 20000);
     return () => clearInterval(id);
-  }, [refresh, session]);
+  }, [refresh, session, configured]);
 
   async function command(payload: Command): Promise<Booking | undefined> {
     setBusy(true);
@@ -139,7 +156,11 @@ export function BarberApp({ admin }: { admin: boolean }) {
         return result.booking;
       }
       const saved = localStorage.getItem(storageKey);
-      const next: Data = saved ? JSON.parse(saved) : demoData();
+      const next: Data = saved
+        ? JSON.parse(saved)
+        : demo
+          ? previewData()
+          : demoData();
       let created: Booking | undefined;
       if (payload.action === "book") {
         const service = next.services.find(
@@ -226,7 +247,7 @@ export function BarberApp({ admin }: { admin: boolean }) {
   }
   async function copyLink() {
     try {
-      await navigator.clipboard.writeText(window.location.origin);
+      await navigator.clipboard.writeText(window.location.origin + basePath);
       setNotice("Link de reservas copiado.");
     } catch {
       setError(
@@ -253,7 +274,7 @@ export function BarberApp({ admin }: { admin: boolean }) {
     <div className={admin ? "app-shell" : "public-shell"}>
       {admin && (
         <aside className="sidebar">
-          <Brand />
+          <Brand href={basePath || "/"} />
           <div className="workspace-label">TU BARBERÍA</div>
           <nav>
             {(
@@ -323,14 +344,14 @@ export function BarberApp({ admin }: { admin: boolean }) {
                   }
                 </strong>
               </span>
-              <Link className="top-link" href="/" target="_blank">
+              <Link className="top-link" href={basePath || "/"} target="_blank">
                 Ver página de reservas <ArrowUpRight size={16} />
               </Link>
             </>
           ) : (
             <>
-              <Brand />
-              <Link className="top-link" href="/panel">
+              <Brand href={basePath || "/"} />
+              <Link className="top-link" href={`${basePath}/panel`}>
                 Soy el barbero <ArrowUpRight size={16} />
               </Link>
             </>
@@ -349,6 +370,27 @@ export function BarberApp({ admin }: { admin: boolean }) {
           <div className="demo-banner">
             <span className="live-dot" /> Modo demo · Los cambios se guardan
             solo en este navegador.
+            {demo && (
+              <>
+                <Link href={admin ? "/demo" : "/demo/panel"}>
+                  {admin ? "Vista cliente" : "Probar panel"}
+                </Link>
+                <button
+                  onClick={() => {
+                    if (
+                      !window.confirm(
+                        "¿Reiniciar la demo? Se borrarán únicamente los cambios de prueba.",
+                      )
+                    )
+                      return;
+                    localStorage.removeItem(storageKey);
+                    window.location.reload();
+                  }}
+                >
+                  Reiniciar demo
+                </button>
+              </>
+            )}
           </div>
         )}
         <main className={admin ? "content" : "public-content"}>
@@ -398,19 +440,25 @@ export function BarberApp({ admin }: { admin: boolean }) {
                   <MapPin size={17} />
                   {data.settings.address}
                 </div>
-                <div className="hero-stamp">
-                  <Scissors size={34} />
-                  <span>
-                    EDDU
-                    <br />
-                    BARBER
-                  </span>
-                  <small>EL DETALLE HACE EL ESTILO</small>
+                <div className="hero-logo">
+                  <Image
+                    src="/brand/eddu-logo.png"
+                    alt="EDDU Barber Studio"
+                    width={2048}
+                    height={800}
+                    sizes="(max-width: 639px) 85vw, 380px"
+                    preload
+                  />
                 </div>
               </section>
-              <BookingForm data={data} busy={busy} command={command} />
+              <BookingForm
+                data={data}
+                busy={busy}
+                command={command}
+                basePath={basePath}
+              />
               <footer className="public-footer">
-                <Brand />
+                <Brand href={basePath || "/"} />
                 <span>Buenos cortes. Buenas costumbres.</span>
               </footer>
             </>
@@ -620,14 +668,20 @@ export function BarberApp({ admin }: { admin: boolean }) {
                               <div className="appointment-info">
                                 <strong>{b.name}</strong>
                                 <span>{b.service_name}</span>
-                                <a
-                                  href={`https://wa.me/${b.phone.replace(/\D/g, "")}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  <MessageCircle size={12} />
-                                  {b.phone}
-                                </a>
+                                {b.phone ? (
+                                  <a
+                                    href={`https://wa.me/${b.phone.replace(/\D/g, "")}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    <MessageCircle size={12} />
+                                    {b.phone}
+                                  </a>
+                                ) : (
+                                  <small className="muted">
+                                    Cliente ficticio
+                                  </small>
+                                )}
                               </div>
                               <div className="appointment-meta">
                                 <strong>{money(b.price)}</strong>
@@ -837,6 +891,7 @@ export function BarberApp({ admin }: { admin: boolean }) {
             busy={busy}
             command={command}
             initialDate={date}
+            basePath={basePath}
           />
         </Modal>
       )}
@@ -905,19 +960,6 @@ export function BarberApp({ admin }: { admin: boolean }) {
   );
 }
 
-function Brand() {
-  return (
-    <Link href="/" className="brand">
-      <span className="brand-mark">
-        <Scissors size={24} />
-      </span>
-      <span>
-        EDDU<span className="brand-sub">BARBER STUDIO</span>
-      </span>
-      <i className="brand-stripe" />
-    </Link>
-  );
-}
 function Stat({
   label,
   value,
@@ -1015,11 +1057,13 @@ function BookingForm({
   busy,
   command,
   initialDate,
+  basePath = "",
 }: {
   data: Data;
   busy: boolean;
   command: (p: Command) => Promise<Booking | undefined>;
   initialDate?: string;
+  basePath?: string;
 }) {
   const [serviceId, setServiceId] = useState(
     data.services.find((s) => s.active)?.id ?? "",
@@ -1058,7 +1102,7 @@ function BookingForm({
           </small>
           <Link
             className="primary"
-            href={`/turno?id=${created.id}&token=${created.token}`}
+            href={`${basePath}/turno?id=${created.id}&token=${created.token}`}
           >
             Ver mi turno <ArrowRight size={17} />
           </Link>

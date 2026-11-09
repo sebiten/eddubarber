@@ -2,10 +2,15 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CalendarDays, Check, Scissors } from "lucide-react";
+import { CalendarDays, Check } from "lucide-react";
+import { Brand } from "./brand";
+import { previewStorageKey } from "@/lib/demo";
 import { Booking, Data, dateLabel, money } from "@/lib/domain";
-import { configured } from "@/lib/supabase";
-export function BookingDetail() {
+import { configured as supabaseConfigured } from "@/lib/supabase";
+export function BookingDetail({ demo = false }: { demo?: boolean }) {
+  const configured = supabaseConfigured && !demo;
+  const storageKey = demo ? previewStorageKey : "eddu-barber-demo-v1";
+  const home = demo ? "/demo" : "/";
   const params = useSearchParams(),
     id = params.get("id"),
     token = params.get("token");
@@ -24,9 +29,7 @@ export function BookingDetail() {
           if (!r.ok) throw new Error(b.error);
           setBooking(b);
         } else {
-          const d: Data = JSON.parse(
-            localStorage.getItem("eddu-barber-demo-v1") || "{}",
-          );
+          const d: Data = JSON.parse(localStorage.getItem(storageKey) || "{}");
           const b = d.bookings?.find((b) => b.id === id && b.token === token);
           if (!b) throw new Error("No encontramos el turno en este navegador.");
           setBooking(b);
@@ -38,7 +41,7 @@ export function BookingDetail() {
       }
     }
     void load();
-  }, [id, token]);
+  }, [id, token, configured, storageKey]);
   async function cancel() {
     setBusy(true);
     setError("");
@@ -52,9 +55,7 @@ export function BookingDetail() {
         const result = await r.json();
         if (!r.ok) throw new Error(result.error);
       } else {
-        const d: Data = JSON.parse(
-          localStorage.getItem("eddu-barber-demo-v1") || "{}",
-        );
+        const d: Data = JSON.parse(localStorage.getItem(storageKey) || "{}");
         const b = d.bookings?.find((b) => b.id === id && b.token === token);
         if (
           !b ||
@@ -65,7 +66,7 @@ export function BookingDetail() {
         d.bookings = d.bookings.map((b) =>
           b.id === id ? { ...b, status: "cancelled" } : b,
         );
-        localStorage.setItem("eddu-barber-demo-v1", JSON.stringify(d));
+        localStorage.setItem(storageKey, JSON.stringify(d));
       }
       setBooking((b) => (b ? { ...b, status: "cancelled" } : null));
       setConfirm(false);
@@ -103,10 +104,7 @@ export function BookingDetail() {
   }
   return (
     <main className="turno-page">
-      <Link className="brand" href="/">
-        <Scissors />
-        EDDU BARBER
-      </Link>
+      <Brand href={home} />
       {!configured && (
         <div className="demo-banner">
           Turno de demostración · Solo en este navegador
@@ -178,7 +176,7 @@ export function BookingDetail() {
                 ))}
             </>
           )}
-          <Link className="text-button" href="/">
+          <Link className="text-button" href={home}>
             Reservar otro turno
           </Link>
           <small className="muted">
@@ -188,7 +186,7 @@ export function BookingDetail() {
       ) : !error ? (
         <div className="loading">Cargando tu turno…</div>
       ) : (
-        <Link href="/" className="primary">
+        <Link href={home} className="primary">
           Volver a reservas
         </Link>
       )}

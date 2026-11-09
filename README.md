@@ -11,18 +11,24 @@ npm run dev
 
 - Reservas: http://localhost:3000
 - Panel: http://localhost:3000/panel
+- Demo con datos ficticios: http://localhost:3000/demo
+- Panel de demostración: http://localhost:3000/demo/panel
 - Turno individual: enlace privado generado al reservar.
+
+La demo explícita funciona aunque Supabase esté configurado: utiliza un almacenamiento separado y nunca envía reservas, bloqueos ni cambios a la base real. Incluye turnos de ejemplo y el próximo lunes bloqueado. «Reiniciar demo» restaura los ejemplos. El logo recortado, sin hojas y con transparencia, está en `public/brand/eddu-logo.png`.
 
 Sin variables de Supabase funciona una **demo local**, indicada en todas las pantallas. Guarda los datos en el navegador y permite recorrer los flujos. No sirve para recibir reservas reales entre dispositivos. No ingresar datos personales reales en la demo. Para reiniciarla, eliminar la clave `eddu-barber-demo-v1` del almacenamiento local del sitio.
 
 ## Conectar Supabase
 
-La conexión quedó pendiente: el proveedor rechazó crear un proyecto nuevo y reactivar `reservaspro` porque la organización alcanzó el límite de proyectos gratuitos. No se modificó `pilcheria-gloria` ni se aplicó SQL a ningún proyecto remoto.
+Proyecto actual: `wvnnlchhwimhjlbaobom`. El esquema ya está aplicado en la base remota y las operaciones de reserva, superposición, cancelación y bloqueo se verificaron dentro de una transacción revertida. La URL y clave publicable están configuradas en `.env.local`.
 
-1. Liberar un cupo o ampliar el plan en Supabase. Reactivar `reservaspro` (proyecto elegido) o utilizar un proyecto disponible.
-2. Ejecutar `supabase/schema.sql` una sola vez en el SQL Editor. Utiliza tablas con prefijo `barber_` para no modificar las de otras apps. Si ya existen, revisar antes de ejecutar; el archivo no borra datos ni es una migración repetible.
+Pendiente para activar la app: guardar `SUPABASE_SERVICE_ROLE_KEY` en `.env.local` y elegir/crear el usuario del barbero. El acceso MCP no reemplaza la clave que necesita el servidor Next.js.
+
+1. Abrir el proyecto `wvnnlchhwimhjlbaobom` en Supabase.
+2. El esquema `supabase/schema.sql` ya se aplicó como `create_barber_booking_app`. No volver a ejecutarlo en este proyecto. Para otra base vacía, ejecutar el archivo una sola vez.
 3. En Authentication → Users, crear el usuario del barbero con email y contraseña, confirmado. No hay registro público en esta aplicación. Copiar su UUID.
-4. Copiar `.env.example` a `.env.local` y completar:
+4. Completar las variables faltantes en `.env.local` sin sobrescribir las existentes:
    - `NEXT_PUBLIC_SUPABASE_URL`: URL del proyecto.
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: clave publicable o clave `anon` heredada.
    - `SUPABASE_SERVICE_ROLE_KEY`: clave secreta de servidor. Nunca ponerle el prefijo `NEXT_PUBLIC_`.

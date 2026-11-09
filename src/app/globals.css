@@ -1689,3 +1689,62 @@ legend {
     gap: 12px;
   }
 }
+
+/* Logo original recortado: el fondo oscuro conserva la lectura de las letras blancas. */
+.brand.brand-photo {
+  width: 168px;
+  padding: 7px 10px;
+  background: #191b1d;
+  border-radius: 7px;
+  flex-shrink: 0;
+  line-height: 0;
+}
+.brand-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.sidebar > .brand-photo {
+  width: 176px;
+  margin-left: 0;
+}
+.hero-logo {
+  background: #191b1d;
+  padding: 24px 18px;
+  border-radius: 10px;
+  margin-top: 30px;
+  border-bottom: 4px solid #315d7e;
+}
+.hero-logo img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.demo-banner {
+  flex-wrap: wrap;
+}
+.demo-banner a,
+.demo-banner button {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-size: 11px;
+  padding: 5px;
+}
+@media (min-width: 640px) {
+  .hero-logo {
+    position: absolute;
+    right: 0;
+    top: 95px;
+    width: 32%;
+    margin: 0;
+    padding: 26px 18px;
+    transform: rotate(-3deg);
+  }
+}
+@media (min-width: 900px) {
+  .hero-logo {
+    width: 39%;
+    top: 85px;
+    padding: 40px 22px;
+  }
+}
