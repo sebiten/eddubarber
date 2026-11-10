@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Brand } from "./brand";
 import { BarberPole } from "./barber-pole";
+import { InstagramSection } from "./home-sections";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -328,6 +329,7 @@ export function BarberApp({ admin }: { admin: boolean }) {
                   </h1>
                   <BarberPole />
                 </div>
+                <p>Marcando tu estilo con casi 10 años de experiencia</p>
                 <a className="primary hero-booking-link" href="#reservar">
                   Reservar turno <ArrowRight size={20} />
                 </a>
@@ -346,6 +348,7 @@ export function BarberApp({ admin }: { admin: boolean }) {
                   basePath={basePath}
                 />
               </div>
+              <InstagramSection />
               <LocationSection
                 name={data.settings.name}
                 address={data.settings.address}
