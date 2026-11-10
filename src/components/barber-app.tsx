@@ -1031,7 +1031,7 @@ function BookingForm({
             time,
             name: f.get("name"),
             phone: f.get("phone"),
-            website: f.get("website"),
+            website: f.get("booking_check"),
           });
           if (booking) setCreated(booking);
         } catch (err) {
@@ -1175,9 +1175,13 @@ function BookingForm({
         </div>
         <input
           className="honeypot"
-          name="website"
+          type="search"
+          name="booking_check"
           tabIndex={-1}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-bwignore
           aria-hidden="true"
         />
         <p className="privacy-note">
