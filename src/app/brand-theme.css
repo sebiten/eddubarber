@@ -164,8 +164,6 @@
 .public-shell .booking-summary .primary { flex-shrink: 0; }
 .public-shell .public-footer { margin-top: 40px; }
 .public-shell .public-footer > span { font-size: 14px; }
-.public-shell .demo-banner { background: #292d30; color: #d7dbdd; font-size: 13px; }
-.public-shell .demo-banner a, .public-shell .demo-banner button { font-size: 13px; min-height: 44px; }
 .public-shell .alert { font-size: 16px; }
 .public-shell :is(button, a, input):focus-visible {
   outline: 3px solid #e5b96b;

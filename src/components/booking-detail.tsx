@@ -17,12 +17,12 @@ export function BookingDetail() {
   useEffect(() => {
     async function load() {
       try {
-          const r = await fetch(
-            `/api/booking?id=${encodeURIComponent(id ?? "")}&token=${encodeURIComponent(token ?? "")}`,
-          );
-          const b = await r.json();
-          if (!r.ok) throw new Error(b.error);
-          setBooking(b);
+        const r = await fetch(
+          `/api/booking?id=${encodeURIComponent(id ?? "")}&token=${encodeURIComponent(token ?? "")}`,
+        );
+        const b = await r.json();
+        if (!r.ok) throw new Error(b.error);
+        setBooking(b);
       } catch (e) {
         setError(
           e instanceof Error ? e.message : "No se pudo cargar el turno.",
@@ -35,13 +35,13 @@ export function BookingDetail() {
     setBusy(true);
     setError("");
     try {
-        const r = await fetch("/api/manage", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "cancel", id, token }),
-        });
-        const result = await r.json();
-        if (!r.ok) throw new Error(result.error);
+      const r = await fetch("/api/manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "cancel", id, token }),
+      });
+      const result = await r.json();
+      if (!r.ok) throw new Error(result.error);
       setBooking((b) => (b ? { ...b, status: "cancelled" } : null));
       setConfirm(false);
     } catch (e) {

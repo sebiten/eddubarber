@@ -249,19 +249,6 @@ legend {
   background: #edf2f7;
   color: #39536b;
 }
-.demo-banner {
-  padding: 8px 24px;
-  background: #edf1f4;
-  color: #607080;
-  font-size: 11px;
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  align-items: center;
-}
-.demo-banner .live-dot {
-  background: var(--blue);
-}
 .brand {
   display: inline-flex;
   align-items: center;
@@ -995,9 +982,6 @@ legend {
   height: 90px;
   border: 0;
 }
-.public-shell .demo-banner {
-  border-top: 1px solid var(--line);
-}
 .public-content {
   max-width: 1040px;
   margin: auto;
@@ -1719,16 +1703,6 @@ legend {
   display: block;
   width: 100%;
   height: auto;
-}
-.demo-banner {
-  flex-wrap: wrap;
-}
-.demo-banner a,
-.demo-banner button {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  font-size: 11px;
-  padding: 5px;
 }
 @media (min-width: 640px) {
   .hero-logo {

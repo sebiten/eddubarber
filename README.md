@@ -1,6 +1,6 @@
 # Eddu Barber
 
-App mobile first para una barbería con un barbero. Next.js App Router, TypeScript, Supabase Auth y Postgres. Diseño blanco y negro, con rojo y azul clásicos de barbería.
+App mobile first para una barbería con un barbero. Next.js App Router, TypeScript, Supabase Auth y Postgres. Identidad en negro carbón y plata, con controles amplios y textos legibles para reservar.
 
 ## Ejecutar
 
@@ -11,19 +11,15 @@ npm run dev
 
 - Reservas: http://localhost:3000
 - Panel: http://localhost:3000/panel
-- Demo con datos ficticios: http://localhost:3000/demo
-- Panel de demostración: http://localhost:3000/demo/panel
 - Turno individual: enlace privado generado al reservar.
 
-La demo explícita funciona aunque Supabase esté configurado: utiliza un almacenamiento separado y nunca envía reservas, bloqueos ni cambios a la base real. Incluye turnos de ejemplo y el próximo lunes bloqueado. «Reiniciar demo» restaura los ejemplos. El logo recortado, sin hojas y con transparencia, está en `public/brand/eddu-logo.png`.
-
-Sin variables de Supabase funciona una **demo local**, indicada en todas las pantallas. Guarda los datos en el navegador y permite recorrer los flujos. No sirve para recibir reservas reales entre dispositivos. No ingresar datos personales reales en la demo. Para reiniciarla, eliminar la clave `eddu-barber-demo-v1` del almacenamiento local del sitio.
+La aplicación utiliza exclusivamente Supabase: no guarda turnos en el navegador ni ofrece reservas ficticias. Si no puede consultar la agenda, muestra un aviso y permite volver a intentar. Las antiguas rutas `/demo` y `/demo/panel` redirigen a las páginas reales; `/demo/turno` vuelve al inicio porque los turnos de prueba no existen en la base real.
 
 ## Conectar Supabase
 
 Proyecto actual: `wvnnlchhwimhjlbaobom`. El esquema ya está aplicado en la base remota y las operaciones de reserva, superposición, cancelación y bloqueo se verificaron dentro de una transacción revertida. La URL y clave publicable están configuradas en `.env.local`.
 
-Pendiente para activar la app: guardar `SUPABASE_SERVICE_ROLE_KEY` en `.env.local` y elegir/crear el usuario del barbero. El acceso MCP no reemplaza la clave que necesita el servidor Next.js.
+Producción usa las variables de entorno configuradas en Vercel. Para ejecutar localmente, completar también `SUPABASE_SERVICE_ROLE_KEY` y `BARBER_USER_ID` en `.env.local`. El acceso MCP no reemplaza la clave que necesita el servidor Next.js.
 
 1. Abrir el proyecto `wvnnlchhwimhjlbaobom` en Supabase.
 2. El esquema `supabase/schema.sql` ya se aplicó como `create_barber_booking_app`. No volver a ejecutarlo en este proyecto. Para otra base vacía, ejecutar el archivo una sola vez.
@@ -33,7 +29,7 @@ Pendiente para activar la app: guardar `SUPABASE_SERVICE_ROLE_KEY` en `.env.loca
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: clave publicable o clave `anon` heredada.
    - `SUPABASE_SERVICE_ROLE_KEY`: clave secreta de servidor. Nunca ponerle el prefijo `NEXT_PUBLIC_`.
    - `BARBER_USER_ID`: UUID del usuario autorizado.
-5. Reiniciar Next.js. La demo se desactiva al configurar las dos variables públicas. Sus datos no se transfieren a Supabase.
+5. Reiniciar Next.js después de configurar las variables. En Vercel, volver a desplegar para aplicar cambios de entorno. Los antiguos datos locales de prueba no se transfieren a Supabase.
 6. Entrar a `/panel` con la cuenta creada y definir nombre, dirección, teléfono, servicios, precios y horarios.
 
 Si se pierde la contraseña, restablecer el acceso desde el administrador de Supabase. El panel no permite crear otras cuentas ni barberos.

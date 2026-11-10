@@ -1,4 +1,4 @@
-import { BarberApp } from "@/components/barber-app";
+import { redirect } from "next/navigation";
 export default function Page() {
-  return <BarberApp admin demo />;
+  redirect("/panel");
 }

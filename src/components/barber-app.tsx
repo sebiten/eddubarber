@@ -48,7 +48,12 @@ const statusLabels = {
 export function BarberApp({ admin }: { admin: boolean }) {
   const configured = supabaseConfigured;
   const basePath = "";
-  const [data, setData] = useState<Data>({ services: [], settings: defaults, blocks: [], bookings: [] });
+  const [data, setData] = useState<Data>({
+    services: [],
+    settings: defaults,
+    blocks: [],
+    bookings: [],
+  });
   const [available, setAvailable] = useState(false);
   const [ready, setReady] = useState(false);
   const [session, setSession] = useState<string | null>(null);
@@ -638,7 +643,7 @@ export function BarberApp({ admin }: { admin: boolean }) {
                       </div>
                       <div className="panel-footer">
                         <span className="live-dot" />
-                        "La agenda se actualiza cada 20 segundos"
+                        La agenda se actualiza cada 20 segundos
                         <span>Hora de Argentina</span>
                       </div>
                     </section>

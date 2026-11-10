@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 export const metadata: Metadata = {
-  title: "Demo · Eddu Barber Studio",
+  title: "Eddu Barber Studio",
   robots: { index: false, follow: false },
   referrer: "no-referrer",
 };
