@@ -21,6 +21,7 @@ import {
   Scissors,
   Settings2,
   ShieldCheck,
+  Trash2,
   X,
 } from "lucide-react";
 import {
@@ -357,6 +358,10 @@ export function BarberApp({ admin }: { admin: boolean }) {
                   basePath={basePath}
                 />
               </div>
+              <LocationSection
+                name={data.settings.name}
+                address={data.settings.address}
+              />
               <footer className="public-footer">
                 <Brand href={basePath || "/"} />
                 <span>Buenos cortes. Buenas costumbres.</span>
@@ -1217,6 +1222,39 @@ function BookingForm({
   );
 }
 
+function LocationSection({ name, address }: { name: string; address: string }) {
+  const location = address.trim();
+  if (!location || location === defaults.address) return null;
+  const destination = encodeURIComponent(location);
+
+  return (
+    <section className="location-section" id="ubicacion" aria-labelledby="location-title">
+      <div className="location-section-info">
+        <span className="eyebrow"><MapPin size={17} /> VISITANOS</span>
+        <h2 id="location-title">Dónde estamos.</h2>
+        <p>{name}</p>
+        <address>{location}</address>
+        <a
+          className="primary"
+          href={`https://www.google.com/maps/dir/?api=1&destination=${destination}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Cómo llegar <ArrowUpRight size={18} />
+        </a>
+      </div>
+      <iframe
+        className="location-map"
+        title={`Ubicación de ${name}: ${location}`}
+        src={`https://www.google.com/maps?q=${destination}&output=embed&hl=es`}
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+        allowFullScreen
+      />
+    </section>
+  );
+}
+
 function ServiceSettings({
   data,
   busy,
@@ -1308,6 +1346,20 @@ function ServiceSettings({
           <button className="primary full" disabled={busy}>
             {s.id === "new" ? "Agregar servicio" : "Guardar cambios"}
           </button>
+          {s.id !== "new" && (
+            <button
+              type="button"
+              className="service-delete full"
+              disabled={busy}
+              onClick={() => {
+                if (window.confirm(`¿Eliminar el servicio «${s.name}»? Esta acción no se puede deshacer.`)) {
+                  void save({ action: "delete_service", id: s.id }, "Servicio eliminado.");
+                }
+              }}
+            >
+              <Trash2 size={16} /> Eliminar servicio
+            </button>
+          )}
         </form>
       ))}
     </div>
@@ -1362,9 +1414,14 @@ function ShopSettings({
         <input
           name="address"
           defaultValue={s.address}
+          placeholder="Calle, número, ciudad y provincia"
+          aria-describedby="address-help"
           required
           maxLength={150}
         />
+        <small id="address-help" className="muted">
+          Usá la dirección completa para que Google Maps ubique el local.
+        </small>
       </label>
       <label>
         WhatsApp

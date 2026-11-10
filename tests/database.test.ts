@@ -31,6 +31,19 @@ test("Postgres: reserva, exclusión, bloqueo, cancelación y permisos", async ()
     assert.equal(first.duration, 60);
     assert.equal(first.price, 18000);
     await assert.rejects(
+      () => db.query("delete from public.barber_services where id='combo'"),
+      /foreign key constraint/,
+    );
+    const deleted = await db.query<{ id: string }>(
+      "delete from public.barber_services where id='barba' returning id",
+    );
+    assert.deepEqual(deleted.rows, [{ id: "barba" }]);
+    const preserved = await db.query<{ service_name: string; price: number }>(
+      "select service_name, price from public.barber_bookings where id=$1",
+      [first.id],
+    );
+    assert.deepEqual(preserved.rows, [{ service_name: "Corte + barba", price: 18000 }]);
+    await assert.rejects(
       () => book("10:30", "5491199999999"),
       /acaba de reservarse/,
     );

@@ -41,13 +41,17 @@ export async function POST(req: NextRequest) {
       result = await db.from("barber_blocks").delete().eq("date", p.date);
     else if (p.action === "service")
       result = await db.from("barber_services").upsert(p.service);
+    else if (p.action === "delete_service")
+      result = await db.from("barber_services").delete().eq("id", p.id);
     else
       result = await db
         .from("barber_settings")
         .upsert({ id: 1, ...p.settings });
     if (result.error) {
       const message =
-        result.error.code === "P0001"
+        p.action === "delete_service" && result.error.code === "23503"
+          ? 'Este servicio tiene turnos asociados y no se puede eliminar. Desmarcá "Visible para reservar" y guardá los cambios para dejar de ofrecerlo.'
+          : result.error.code === "P0001"
           ? result.error.message
           : "No se pudo guardar el cambio. Volvé a intentar.";
       return NextResponse.json(

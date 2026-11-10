@@ -60,6 +60,10 @@ export const commandSchema = z.discriminatedUnion("action", [
   }),
   z.object({ action: z.literal("unblock"), date: dateSchema }),
   z.object({ action: z.literal("service"), service: serviceSchema }),
+  z.object({
+    action: z.literal("delete_service"),
+    id: z.string().trim().min(1).max(80),
+  }),
   z.object({ action: z.literal("settings"), settings: settingsSchema }),
   z.object({ action: z.literal("cancel"), id: z.uuid(), token: z.uuid() }),
 ]);
