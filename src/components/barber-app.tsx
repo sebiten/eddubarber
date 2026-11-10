@@ -1160,12 +1160,12 @@ function BookingForm({
             />
           </label>
           <label>
-            WhatsApp con código de país
+            WhatsApp
             <input
               name="phone"
               type="tel"
               autoComplete="tel"
-              placeholder="+54 9 11 1234 5678"
+              placeholder="11 1234 5678"
               pattern="\+?[0-9\s\(\)\-]{8,22}"
               minLength={8}
               maxLength={22}
