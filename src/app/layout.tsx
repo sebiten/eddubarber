@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./brand-theme.css";
 export const metadata: Metadata = {
-  title: "Eddu Barber · Tu próximo buen corte",
+  title: "Eddu Barber · Reservas",
   description:
     "Reservá tu turno en Eddu Barber. Elegí tu servicio, día y horario.",
 };

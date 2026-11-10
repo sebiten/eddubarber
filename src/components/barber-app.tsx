@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Brand } from "./brand";
+import { BarberPole } from "./barber-pole";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -45,6 +45,17 @@ const statusLabels = {
   cancelled: "Cancelado",
   no_show: "No asistió",
 };
+
+function openDatePicker(event: React.MouseEvent<HTMLInputElement>) {
+  try {
+    if (typeof event.currentTarget.showPicker === "function") {
+      event.currentTarget.showPicker();
+      event.preventDefault();
+    }
+  } catch {
+    // Conserva el selector nativo si el navegador no permite abrirlo por código.
+  }
+}
 
 export function BarberApp({ admin }: { admin: boolean }) {
   const configured = supabaseConfigured;
@@ -210,21 +221,15 @@ export function BarberApp({ admin }: { admin: boolean }) {
           </nav>
           <div className="sidebar-bottom">
             <div className="share-card">
-              <span className="tiny-label">TU AGENDA, SIEMPRE ABIERTA</span>
-              <p>
-                Vos cortás.
-                <br />
-                Tu link toma los turnos.
-              </p>
+              <p>Enlace de reservas</p>
               <button onClick={copyLink}>
-                Copiar mi link <Copy size={15} />
+                Copiar enlace <Copy size={15} />
               </button>
             </div>
             <div className="profile">
               <span className="avatar dark">EB</span>
               <div>
                 <strong>Eddu Barber</strong>
-                <small>Mi espacio de trabajo</small>
               </div>
               {configured && (
                 <button
@@ -264,7 +269,7 @@ export function BarberApp({ admin }: { admin: boolean }) {
             <>
               <Brand href={basePath || "/"} />
               <Link className="top-link" href={`${basePath}/panel`}>
-                Soy el barbero <ArrowUpRight size={16} />
+                Administración <ArrowUpRight size={16} />
               </Link>
             </>
           )}
@@ -315,42 +320,25 @@ export function BarberApp({ admin }: { admin: boolean }) {
           ) : !admin ? (
             <>
               <section className="public-hero">
-                <div className="eyebrow">
-                  <Scissors size={18} /> EDDU · BARBER STUDIO
+                <div className="hero-heading">
+                  <h1>
+                    Reservá
+                    <br />
+                    <span>tu turno</span>
+                  </h1>
+                  <BarberPole />
                 </div>
-                <h1>
-                  Tu estilo.
-                  <br />
-                  <span>Tu barbería.</span>
-                </h1>
-                <p>
-                  Reservá tu turno en {data.settings.name}.<br />
-                  Elegí el servicio, el horario y completá tus datos.
-                </p>
                 <a className="primary hero-booking-link" href="#reservar">
-                  Reservar mi turno <ArrowRight size={20} />
+                  Reservar turno <ArrowRight size={20} />
                 </a>
-                <div className="location">
-                  <MapPin size={17} />
-                  {data.settings.address}
-                </div>
-                <div className="hero-logo">
-                  <Image
-                    src="/brand/eddu-logo.png"
-                    alt="EDDU Barber Studio"
-                    width={2048}
-                    height={800}
-                    sizes="(max-width: 639px) 85vw, 380px"
-                    preload
-                  />
-                </div>
+                {data.settings.address && data.settings.address !== defaults.address && (
+                  <div className="location">
+                    <MapPin size={17} />
+                    {data.settings.address}
+                  </div>
+                )}
               </section>
               <div id="reservar" className="reservation-area" tabIndex={-1}>
-                <div className="reservation-intro">
-                  <span className="eyebrow">RESERVAS ONLINE</span>
-                  <h2>Tu turno, en 3 pasos.</h2>
-                  <p>Sin crear una cuenta. Pagás en la barbería.</p>
-                </div>
                 <BookingForm
                   data={data}
                   busy={busy}
@@ -364,41 +352,23 @@ export function BarberApp({ admin }: { admin: boolean }) {
               />
               <footer className="public-footer">
                 <Brand href={basePath || "/"} />
-                <span>Buenos cortes. Buenas costumbres.</span>
               </footer>
             </>
           ) : (
             <>
               <div className="page-heading">
-                <div className="eyebrow">
-                  {tab === "agenda"
-                    ? "TODO LISTO PARA UN BUEN DÍA"
-                    : "TU NEGOCIO, A TU MANERA"}
-                </div>
                 <div className="heading-row">
                   <div>
                     <h1>
                       {
                         {
-                          agenda: "Tu agenda.",
-                          blocks: "Tu tiempo también importa.",
-                          services: "El menú de la casa.",
-                          settings: "A tu manera.",
+                          agenda: "Agenda",
+                          blocks: "Días bloqueados",
+                          services: "Servicios",
+                          settings: "Configuración",
                         }[tab]
                       }
                     </h1>
-                    <p>
-                      {
-                        {
-                          agenda:
-                            "Menos mensajes, más tiempo para hacer lo tuyo.",
-                          blocks: "Tomate el día. Tu página avisa por vos.",
-                          services: "Servicios claros. Turnos sin vueltas.",
-                          settings:
-                            "Los detalles que hacen funcionar tu barbería.",
-                        }[tab]
-                      }
-                    </p>
                   </div>
                   {tab === "agenda" ? (
                     <button
@@ -439,7 +409,6 @@ export function BarberApp({ admin }: { admin: boolean }) {
                       value={String(
                         selected.filter((b) => b.status === "completed").length,
                       ).padStart(2, "0")}
-                      detail="Un buen corte más"
                       icon={<Check size={20} />}
                     />
                   </section>
@@ -584,7 +553,7 @@ export function BarberApp({ admin }: { admin: boolean }) {
                                   </a>
                                 ) : (
                                   <small className="muted">
-                                    Cliente ficticio
+                                    Sin teléfono
                                   </small>
                                 )}
                               </div>
@@ -625,16 +594,16 @@ export function BarberApp({ admin }: { admin: boolean }) {
                               {search
                                 ? "No encontramos ese cliente"
                                 : blocked
-                                  ? "Hoy toca una pausa"
-                                  : "La agenda está libre"}
+                                  ? "Día bloqueado"
+                                  : "Sin turnos"}
                             </h3>
-                            <p>
-                              {search
-                                ? "Probá con otro nombre o teléfono."
-                                : blocked
-                                  ? "Tus clientes verán el aviso al elegir este día."
-                                  : "Compartí tu link para recibir tus primeros turnos."}
-                            </p>
+                            {(search || blocked) && (
+                              <p>
+                                {search
+                                  ? "Probá con otro nombre o teléfono."
+                                  : "Tus clientes verán el aviso al elegir este día."}
+                              </p>
+                            )}
                             {!search && !blocked && (
                               <button
                                 className="text-button"
@@ -654,31 +623,20 @@ export function BarberApp({ admin }: { admin: boolean }) {
                     </section>
                     <aside className="agenda-aside">
                       <div className="dark-card">
-                        <span className="tiny-label">LA SILLA TE ESPERA</span>
-                        <Scissors size={29} />
-                        <h3>
-                          Tu oficio.
-                          <br />
-                          Tu ritmo.
-                        </h3>
-                        <p>
-                          Compartí tu página y dejá que tus clientes elijan su
-                          próximo turno.
-                        </p>
+                        <h3>Reservas</h3>
                         <button onClick={copyLink}>
-                          Compartir mi agenda <ArrowUpRight size={17} />
+                          Copiar enlace <Copy size={17} />
                         </button>
                         <div className="stripe" />
                       </div>
                       <section className="panel quick-panel">
-                        <h3>Un poco de orden</h3>
+                        <h3>Accesos rápidos</h3>
                         <button onClick={() => setBlockOpen(true)}>
                           <span className="quick-icon">
                             <LockKeyhole size={18} />
                           </span>
                           <span>
                             <strong>Bloquear un día</strong>
-                            <small>Un descanso también es un plan</small>
                           </span>
                           <ChevronRight size={17} />
                         </button>
@@ -687,7 +645,7 @@ export function BarberApp({ admin }: { admin: boolean }) {
                             <Clock3 size={18} />
                           </span>
                           <span>
-                            <strong>Mis horarios</strong>
+                            <strong>Horarios</strong>
                             <small>
                               {data.settings.start} a {data.settings.end}
                             </small>
@@ -695,10 +653,6 @@ export function BarberApp({ admin }: { admin: boolean }) {
                           <ChevronRight size={17} />
                         </button>
                       </section>
-                      <p className="aside-note">
-                        <ShieldCheck size={16} />
-                        Tu agenda, bajo control.
-                      </p>
                     </aside>
                   </div>
                 </>
@@ -744,7 +698,6 @@ export function BarberApp({ admin }: { admin: boolean }) {
                     <div className="empty">
                       <CalendarDays size={30} />
                       <h3>Sin días bloqueados</h3>
-                      <p>Cuando necesites una pausa, avisá desde acá.</p>
                     </div>
                   )}
                 </section>
@@ -755,13 +708,6 @@ export function BarberApp({ admin }: { admin: boolean }) {
               {tab === "settings" && (
                 <ShopSettings data={data} busy={busy} save={run} />
               )}
-              <footer className="dashboard-footer">
-                <span>
-                  EDDU BARBER <span className="footer-dot">·</span> Hecho para
-                  tu oficio.
-                </span>
-                <span>Menos vueltas. Más cortes.</span>
-              </footer>
             </>
           )}
         </main>
@@ -788,7 +734,7 @@ export function BarberApp({ admin }: { admin: boolean }) {
         )}
       </div>
       {bookingOpen && (
-        <Modal title="Un nuevo turno" close={() => setBookingOpen(false)}>
+        <Modal title="Nuevo turno" close={() => setBookingOpen(false)}>
           <BookingForm
             data={data}
             busy={busy}
@@ -831,6 +777,7 @@ export function BarberApp({ admin }: { admin: boolean }) {
               <input
                 name="date"
                 type="date"
+                onClick={openDatePicker}
                 min={today()}
                 defaultValue={date < today() ? today() : date}
                 required
@@ -840,7 +787,7 @@ export function BarberApp({ admin }: { admin: boolean }) {
               Aviso para tus clientes
               <textarea
                 name="reason"
-                defaultValue="Este día no atendemos. Te esperamos en otro horario."
+                defaultValue="Sin atención en esta fecha."
                 maxLength={200}
                 required
               />
@@ -871,7 +818,7 @@ function Stat({
 }: {
   label: string;
   value: string;
-  detail: string;
+  detail?: string;
   icon: React.ReactNode;
 }) {
   return (
@@ -879,7 +826,7 @@ function Stat({
       <div>
         <span className="tiny-label">{label}</span>
         <strong>{value}</strong>
-        <p>{detail}</p>
+        {detail && <p>{detail}</p>}
       </div>
       <span className="stat-icon">{icon}</span>
     </div>
@@ -989,9 +936,8 @@ function BookingForm({
         <span className="confirmation-check">
           <Check size={32} />
         </span>
-        <span className="eyebrow">NOS VEMOS EN LA SILLA</span>
-        <h2>Tu turno está confirmado.</h2>
-        <p>{created.name}, ya reservamos tu lugar.</p>
+        <h2>Turno confirmado</h2>
+        <p>{created.name}</p>
         <div className="ticket">
           <strong>{created.service_name}</strong>
           <span>
@@ -1007,7 +953,7 @@ function BookingForm({
             className="primary"
             href={`${basePath}/turno?id=${created.id}&token=${created.token}`}
           >
-            Ver mi turno <ArrowRight size={17} />
+            Ver turno <ArrowRight size={17} />
           </Link>
         </div>
         <button
@@ -1049,8 +995,7 @@ function BookingForm({
         <div className="step-heading">
           <span>01</span>
           <div>
-            <h2>Elegí tu servicio</h2>
-            <p>Tocá el servicio que querés reservar.</p>
+            <h2>Servicio</h2>
           </div>
         </div>
         <div className="service-options">
@@ -1074,7 +1019,6 @@ function BookingForm({
                 <Scissors size={22} />
                 <span>
                   <strong>{s.name}</strong>
-                  <small>{s.description}</small>
                   <span className="service-duration">
                     <Clock3 size={12} />
                     {s.duration} min
@@ -1092,14 +1036,15 @@ function BookingForm({
         <div className="step-heading">
           <span>02</span>
           <div>
-            <h2>Elegí el día y el horario</h2>
-            <p>Tocá un horario disponible. Hora de Argentina.</p>
+            <h2>Fecha y horario</h2>
+            <p>Hora de Argentina</p>
           </div>
         </div>
         <label>
           Fecha
           <input
             type="date"
+            onClick={openDatePicker}
             value={date}
             min={today()}
             max={addDays(today(), 60)}
@@ -1148,8 +1093,7 @@ function BookingForm({
         <div className="step-heading">
           <span>03</span>
           <div>
-            <h2>Solo faltan tus datos</h2>
-            <p>Sin crear una cuenta. Así de simple.</p>
+            <h2>Tus datos</h2>
           </div>
         </div>
         <div className="form-grid">
@@ -1207,7 +1151,7 @@ function BookingForm({
           <small aria-live="polite">
             {time && available.includes(time)
               ? `${dateLabel(date, true)} · ${time} h`
-              : "Elegí un horario para poder confirmar."}
+              : "Seleccioná un horario."}
           </small>
         </div>
         <button
@@ -1230,9 +1174,7 @@ function LocationSection({ name, address }: { name: string; address: string }) {
   return (
     <section className="location-section" id="ubicacion" aria-labelledby="location-title">
       <div className="location-section-info">
-        <span className="eyebrow"><MapPin size={17} /> VISITANOS</span>
-        <h2 id="location-title">Dónde estamos.</h2>
-        <p>{name}</p>
+        <h2 id="location-title">Ubicación</h2>
         <address>{location}</address>
         <a
           className="primary"
@@ -1511,12 +1453,7 @@ function Login({
           setBusy(false);
         }}
       >
-        <span className="eyebrow">SOLO PARA EL BARBERO</span>
-        <h1>
-          Tu espacio.
-          <br />
-          Tu agenda.
-        </h1>
+        <h1>Iniciar sesión</h1>
         <label>
           Email
           <input type="email" name="email" autoComplete="username" required />

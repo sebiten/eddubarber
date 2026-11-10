@@ -89,15 +89,14 @@ export function BookingDetail() {
           <span className="confirmation-check">
             <Check size={30} />
           </span>
-          <span className="eyebrow">TU PRÓXIMO BUEN CORTE</span>
           <h2>
             {booking.status === "cancelled"
-              ? "Tu turno fue cancelado."
+              ? "Turno cancelado"
               : booking.status === "completed"
-                ? "Gracias por venir."
+                ? "Turno completado"
                 : booking.status === "no_show"
-                  ? "Turno no asistido."
-                  : "Tu lugar está reservado."}
+                  ? "No asististe al turno"
+                  : "Turno confirmado"}
           </h2>
           <p>{booking.name}</p>
           <div className="ticket">
