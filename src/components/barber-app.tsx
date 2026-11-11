@@ -336,7 +336,10 @@ export function BarberApp({ admin }: { admin: boolean }) {
                 {data.settings.address && data.settings.address !== defaults.address && (
                   <div className="location">
                     <MapPin size={17} />
-                    {data.settings.address}
+                    <span>
+                      {data.settings.address}
+                      {!/arrieta/i.test(data.settings.address) && " · Barrio Arrieta"}
+                    </span>
                   </div>
                 )}
               </section>
@@ -1178,7 +1181,10 @@ function LocationSection({ name, address }: { name: string; address: string }) {
     <section className="location-section" id="ubicacion" aria-labelledby="location-title">
       <div className="location-section-info">
         <h2 id="location-title">Ubicación</h2>
-        <address>{location}</address>
+        <address>
+          {location}
+          {!/arrieta/i.test(location) && <><br />Barrio Arrieta</>}
+        </address>
         <a
           className="primary"
           href={`https://www.google.com/maps/dir/?api=1&destination=${destination}`}

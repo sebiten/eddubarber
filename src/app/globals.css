@@ -112,10 +112,25 @@ select:focus {
   outline-offset: 1px;
 }
 input[type="date"] {
+  display: block;
+  appearance: none;
+  -webkit-appearance: none;
+  min-inline-size: 0;
+  inline-size: 100%;
+  max-inline-size: 100%;
   cursor: pointer;
+}
+input[type="date"]::-webkit-date-and-time-value {
+  min-width: 0;
+  text-align: left;
+}
+input[type="date"]::-webkit-datetime-edit {
+  min-width: 0;
+  padding: 0;
 }
 label {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: 8px;
   font-size: 12px;
